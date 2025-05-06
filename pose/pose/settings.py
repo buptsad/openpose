@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'evalpose',
     'video_manager',
+    'feedback',
     'corsheaders',
     'drf_yasg',  # Api docs
     'log_viewer',

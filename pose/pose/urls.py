@@ -45,6 +45,7 @@ urlpatterns = [
     path('standard/', include('video_manager.urls')),
     # 添加 API 文档路由
     path('api-docs/', include(doc_urls)),
+    path('api/feedback/', include('feedback.urls')),
 ]
 
 # 添加媒体文件的URL配置

@@ -407,3 +407,35 @@ django.db.utils.OperationalError: no such table: log_viewer_logviewer
 2025-04-20 01:30:43,434 [INFO] django.utils.autoreload: E:\Digital_people\openpose\app\pose\log_viewer\models.py changed, reloading.
 2025-04-20 01:30:43,876 [INFO] django.utils.autoreload: Watching for file changes with StatReloader
 2025-04-20 23:42:57,157 [INFO] django.utils.autoreload: Watching for file changes with StatReloader
+2025-05-06 13:41:45,678 [INFO] django.utils.autoreload: Watching for file changes with StatReloader
+2025-05-06 13:48:37,663 [INFO] django.utils.autoreload: Watching for file changes with StatReloader
+2025-05-06 13:48:46,757 [WARNING] django.request: Not Found: /
+2025-05-06 13:48:46,759 [WARNING] django.server: "GET / HTTP/1.1" 404 4926
+2025-05-06 13:48:46,897 [WARNING] django.request: Not Found: /favicon.ico
+2025-05-06 13:48:46,897 [WARNING] django.server: "GET /favicon.ico HTTP/1.1" 404 4977
+2025-05-06 13:48:52,926 [WARNING] django.request: Not Found: /favicon.ico
+2025-05-06 13:48:52,926 [WARNING] django.server: "GET /favicon.ico HTTP/1.1" 404 4977
+2025-05-06 13:48:52,943 [WARNING] django.request: Not Found: /
+2025-05-06 13:48:52,944 [WARNING] django.server: "GET / HTTP/1.1" 404 4926
+2025-05-06 13:48:56,118 [WARNING] django.request: Not Found: /api-doc
+2025-05-06 13:48:56,119 [WARNING] django.server: "GET /api-doc HTTP/1.1" 404 4965
+2025-05-06 13:48:59,586 [WARNING] django.request: Not Found: /api-docs
+2025-05-06 13:48:59,586 [WARNING] django.server: "GET /api-docs HTTP/1.1" 404 4968
+2025-05-06 13:49:03,290 [WARNING] django.request: Not Found: /api-docs/
+2025-05-06 13:49:03,290 [WARNING] django.server: "GET /api-docs/ HTTP/1.1" 404 5666
+2025-05-06 13:49:09,069 [INFO] django.server: "GET /api-docs/swagger HTTP/1.1" 301 0
+2025-05-06 13:49:09,118 [INFO] django.server: "GET /api-docs/swagger/ HTTP/1.1" 200 2230
+2025-05-06 13:49:09,518 [INFO] django.server: "GET /static/drf-yasg/immutable.min.js HTTP/1.1" 200 56904
+2025-05-06 13:49:09,521 [INFO] django.server: "GET /static/drf-yasg/swagger-ui-init.js HTTP/1.1" 200 15480
+2025-05-06 13:49:09,554 [INFO] django.server: "GET /static/drf-yasg/insQ.min.js HTTP/1.1" 200 2093
+2025-05-06 13:49:09,561 [INFO] django.server: "GET /static/drf-yasg/swagger-ui-dist/swagger-ui-standalone-preset.js HTTP/1.1" 200 322863
+2025-05-06 13:49:09,562 [INFO] django.server: "GET /static/drf-yasg/style.css HTTP/1.1" 200 1047
+2025-05-06 13:49:09,568 [INFO] django.server: "GET /static/drf-yasg/swagger-ui-dist/swagger-ui.css HTTP/1.1" 200 145206
+2025-05-06 13:49:09,578 [INFO] django.server: "GET /static/drf-yasg/swagger-ui-dist/swagger-ui-bundle.js HTTP/1.1" 200 1046583
+2025-05-06 13:49:09,730 [INFO] django.server: "GET /api-docs/swagger/?format=openapi HTTP/1.1" 200 13166
+2025-05-06 13:49:09,746 [INFO] django.server: "GET /static/drf-yasg/swagger-ui-dist/favicon-32x32.png HTTP/1.1" 200 628
+2025-05-06 13:51:31,146 [INFO] django.server: "GET /api/feedback/ HTTP/1.1" 200 2
+2025-05-06 13:51:33,427 [INFO] django.server: "GET /api/feedback/ HTTP/1.1" 200 2
+2025-05-06 13:52:53,334 [INFO] django.server: "POST /api/feedback/ HTTP/1.1" 201 45
+2025-05-06 13:53:09,539 [INFO] django.server: "GET /api/feedback/ HTTP/1.1" 200 103
+2025-05-06 13:53:25,129 [INFO] django.server: "GET /api/feedback/72db5844-8750-4c11-89a0-3ea0d1ef1b78/ HTTP/1.1" 200 271
