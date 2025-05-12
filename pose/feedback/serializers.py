@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Feedback
+from django.utils import timezone
 
 class MessageSerializer(serializers.Serializer):
     id = serializers.IntegerField(help_text="Unique identifier for the message")
@@ -24,12 +25,13 @@ class FeedbackSerializer(serializers.Serializer):
         many=True, 
         help_text="List of conversation messages"
     )
-    date = serializers.DateField(help_text="Date when feedback was provided")
+    date = serializers.DateField(required=False, help_text="Date when feedback was provided (automatically added if not specified)")
     
     def create(self, validated_data):
         rating_data = validated_data.get('rating', {})
         messages_data = validated_data.get('messages', [])
-        date = validated_data.get('date')
+        # Auto-set date to today if not provided
+        date = validated_data.get('date', timezone.now().date())
         
         # Create the feedback object
         feedback = Feedback.objects.create(

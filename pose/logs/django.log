@@ -439,3 +439,12 @@ django.db.utils.OperationalError: no such table: log_viewer_logviewer
 2025-05-06 13:52:53,334 [INFO] django.server: "POST /api/feedback/ HTTP/1.1" 201 45
 2025-05-06 13:53:09,539 [INFO] django.server: "GET /api/feedback/ HTTP/1.1" 200 103
 2025-05-06 13:53:25,129 [INFO] django.server: "GET /api/feedback/72db5844-8750-4c11-89a0-3ea0d1ef1b78/ HTTP/1.1" 200 271
+2025-05-06 17:38:15,366 [INFO] django.utils.autoreload: Watching for file changes with StatReloader
+2025-05-06 17:38:25,564 [INFO] django.server: "GET /api/feedback/ HTTP/1.1" 200 103
+2025-05-06 17:38:57,128 [INFO] django.server: "POST /api/feedback/ HTTP/1.1" 201 45
+2025-05-06 17:39:09,450 [INFO] django.server: "GET /api/feedback/0209da1f-8a11-4ba6-97eb-7dee9794e7b9/ HTTP/1.1" 200 153
+2025-05-06 17:40:39,612 [INFO] django.server: "POST /api/feedback/ HTTP/1.1" 201 45
+2025-05-06 17:40:50,094 [INFO] django.server: "GET /api/feedback/308de2fa-da8d-48b6-be7e-d8fbd3b05fad/ HTTP/1.1" 200 153
+2025-05-06 17:41:15,390 [INFO] django.server: "GET /api/feedback/ HTTP/1.1" 200 307
+2025-05-06 17:44:05,632 [INFO] django.utils.autoreload: E:\Digital_people\openpose\app\pose\feedback\views.py changed, reloading.
+2025-05-06 17:44:06,402 [INFO] django.utils.autoreload: Watching for file changes with StatReloader
