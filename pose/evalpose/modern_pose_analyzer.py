@@ -253,15 +253,15 @@ class ModernPoseAnalyzer:
             overlap_path = os.path.join(output_dir, 'overlap_video.mp4')
             exercise_video_path = self._get_video_path_for_sequence(session_id, 'exercise')
             
-            # Use the enhanced implementation from pose_detector.py to generate comparison video with config
-            self.analyzer.generate_video_with_selected_frames(
+            # Call the visualization module's function directly
+            generate_video_with_selected_frames(
                 std_sequence,
                 exe_sequence,
                 dtw_result,
                 overlap_path,
                 exercise_video_path,
                 stages,
-                config=use_config  # Pass the config here
+                config=use_config
             )
             
             result['overlap_video_success'] = True

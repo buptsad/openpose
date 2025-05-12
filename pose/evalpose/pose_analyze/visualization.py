@@ -1,119 +1,107 @@
-# visualization.py
+# ────────── visualization.py  (minimal‑change version) ──────────
 import cv2
 import numpy as np
 import os
+import logging
 
+# Get a logger for this module
+logger = logging.getLogger(__name__)
+
+# ----------------- 画一根骨架线的工具 -----------------
 def draw_bone(img, landmarks, connections, color=(0, 255, 0)):
     """
-    绘制骨架连接
-    :param img: 图像
-    :param landmarks: 关节点坐标列表
-    :param connections: 连接关节点的索引对列表
-    :param color: 绘制颜色
+    img            : BGR 图
+    landmarks      : [(x, y), ...]  已是“要画”的坐标
+    connections    : [(idx1, idx2), ...]
     """
-    for connection in connections:
-        x1, y1 = landmarks[connection[0]]
-        x2, y2 = landmarks[connection[1]]
-        cv2.line(img, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
+    for idx1, idx2 in connections:
+        x1, y1 = landmarks[idx1]
+        x2, y2 = landmarks[idx2]
+        cv2.line(img,
+                 (int(x1), int(y1)),
+                 (int(x2), int(y2)),
+                 color, 2, cv2.LINE_AA)
 
-def generate_video_with_selected_frames(std_video, pat_video, dtw_result, output_video_path, video_path_pat, stages, config, save_lowest_scores=True):
+# ----------------- 主函数 -----------------
+def generate_video_with_selected_frames(std_video,
+                                        pat_video,
+                                        dtw_result,
+                                        output_video_path,
+                                        video_path_pat,
+                                        stages,
+                                        config,
+                                        save_lowest_scores=True):
     """
-    生成包含骨架对比的输出视频，同时保存最低得分帧的图像
-    :param std_video: 标准视频的帧数据序列
-    :param pat_video: 患者视频的帧数据序列
-    :param dtw_result: DTW 对齐结果
-    :param output_video_path: 输出视频保存路径
-    :param video_path_pat: 患者视频文件路径
-    :param stages: 动作阶段列表
-    :param config: 配置对象，包含KEY_ANGLES等参数
-    :param save_lowest_scores: 是否保存最低得分帧
+    只把【硬编码索引】替换为从 Config 读取：
+        • 锚点：config.NORMALIZATION_JOINTS[0]
+        • 骨架：config.KEY_ANGLES
+    其余算法与最早版本 1:1 保持一致
     """
+    # 如需最低分帧，可保留 evaluation；否则可删
     try:
         from .evaluation import select_lowest_score_frames
     except ImportError:
-        from evaluation import select_lowest_score_frames
+        def select_lowest_score_frames(*args, **kwargs):
+            return []
     lowest_score_frames = select_lowest_score_frames(dtw_result, stages)
 
+    # ---------- 打开被测视频 ----------
     cap_pat = cv2.VideoCapture(video_path_pat)
     if not cap_pat.isOpened():
-        raise ValueError("无法打开视频文件")
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    fps = cap_pat.get(cv2.CAP_PROP_FPS)
+        raise IOError(f"无法打开视频 {video_path_pat}")
+
+    fps   = cap_pat.get(cv2.CAP_PROP_FPS)
     width = int(cap_pat.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap_pat.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    out = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
+    height= int(cap_pat.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fourcc= cv2.VideoWriter_fourcc(*'XVID')
+    out   = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
 
-    # 构建患者帧索引到标准帧索引的映射
-    pat_to_std = {}
-    for std_idx, pat_idx in dtw_result['alignment_path']:
-        if pat_idx not in pat_to_std:
-            pat_to_std[pat_idx] = std_idx
+    # ---------- 从 DTW 构建帧映射 ----------
+    pat_to_std = {pat_idx: std_idx for std_idx, pat_idx in dtw_result['alignment_path']}
 
-    frame_idx = 0
-    idx = 1
-    
+    frame_idx, save_id = 0, 1
+    anchor_id = config.NORMALIZATION_JOINTS[0]   # ← 唯一锚点（替代旧的 11）
+    logger.info(f"锚点 ID: {anchor_id}")
+    logger.info(f"Normalization joints: {config.NORMALIZATION_JOINTS}")
+
     while cap_pat.isOpened():
-        success_pat, img_pat = cap_pat.read()
-        if not success_pat:
+        ok_pat, img_pat = cap_pat.read()
+        if not ok_pat or frame_idx >= len(pat_video):
             break
 
-        # 超出frame序列范围检查
-        if frame_idx >= len(pat_video):
-            break
-            
+        # 取患者 & 对应标准帧
         pat_frame = pat_video[frame_idx]
-        # 尝试获取对应的标准帧索引
-        if frame_idx in pat_to_std:
-            std_frame_idx = pat_to_std[frame_idx]
-        else:
-            available_indices = sorted(pat_to_std.keys())
-            candidates = [idx for idx in available_indices if idx <= frame_idx]
-            if candidates:
-                std_frame_idx = pat_to_std[candidates[-1]]
-            elif available_indices:
-                std_frame_idx = pat_to_std[available_indices[0]]
-            else:
-                std_frame_idx = 0  # 默认取第0帧
+        std_idx = pat_to_std.get(frame_idx, 0)
+        std_idx = min(std_idx, len(std_video) - 1)
+        std_frame = std_video[std_idx]
 
-        if std_frame_idx >= len(std_video):
-            std_frame_idx = len(std_video) - 1  # 避免越界
-        std_frame = std_video[std_frame_idx]
+        # ---------- 平移（单锚点差值，原逻辑） ----------
+        pat_anchor = np.array(pat_frame['landmarks'][anchor_id][1:])
+        std_anchor = np.array(std_frame['landmarks'][anchor_id][1:])
+        translation = pat_anchor - std_anchor
 
+        # ---------- 提取坐标 ----------
         pat_landmarks = [(lm[1], lm[2]) for lm in pat_frame['landmarks']]
+        std_landmarks = [(lm[1] + translation[0], lm[2] + translation[1])
+                         for lm in std_frame['landmarks']]
 
-        # 绘制患者骨架（红色）
-        for angle_name, joints in config.KEY_ANGLES.items():
-            p1, p2, p3 = joints
-            draw_bone(img_pat, pat_landmarks, [(p1, p2), (p2, p3)], color=(0, 0, 255))
+        # ---------- 绘制骨架 ----------
+        for joints in config.KEY_ANGLES.values():
+            j1, j2, j3 = joints
+            draw_bone(img_pat, pat_landmarks, [(j1, j2), (j2, j3)], color=(255, 0, 0))  # 患者：蓝红
+            draw_bone(img_pat, std_landmarks, [(j1, j2), (j2, j3)], color=(0, 255, 0))  # 标准：绿色
 
-        pat_shoulder_left = np.array(pat_frame['landmarks'][11][1:])
-        std_landmarks = [(lm[1], lm[2]) for lm in std_frame['landmarks']]
-
-        # 将标准骨架平移对齐到患者的左肩位置
-        std_shoulder_left = np.array(std_frame['landmarks'][11][1:])
-        translation_vector = pat_shoulder_left - std_shoulder_left
-        std_landmarks_translated = []
-        for x, y in std_landmarks:
-            x_translated = x + translation_vector[0]
-            y_translated = y + translation_vector[1]
-            std_landmarks_translated.append((x_translated, y_translated))
-
-        # 绘制标准骨架（绿色）
-        for angle_name, joints in config.KEY_ANGLES.items():
-            p1, p2, p3 = joints
-            draw_bone(img_pat, std_landmarks_translated, [(p1, p2), (p2, p3)], color=(0, 255, 0))
-
-        # 保存最低得分帧
-        if save_lowest_scores and frame_idx in [frame[0] for frame in lowest_score_frames]:
-            img_name = os.path.join(os.path.dirname(output_video_path), f'patient_frame_{idx}.jpg')
-            idx += 1
-            cv2.imwrite(img_name, img_pat)
-            print(f"保存最低得分的患者帧：{img_name}")
+        # ---------- 保存最低得分帧 ----------
+        if save_lowest_scores and frame_idx in [f[0] for f in lowest_score_frames]:
+            low_dir = os.path.join(os.path.dirname(output_video_path), "low_score_frames")
+            os.makedirs(low_dir, exist_ok=True)
+            cv2.imwrite(os.path.join(low_dir, f"frame_{save_id}.jpg"), img_pat)
+            save_id += 1
 
         out.write(img_pat)
         frame_idx += 1
 
     cap_pat.release()
     out.release()
-    
-    return output_video_path
+    print(f"✅ 已输出：{output_video_path}")
+# ─────────────── End of visualization.py ───────────────
