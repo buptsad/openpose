@@ -6,6 +6,10 @@ class VideoAsset(models.Model):
     original_cover_path = models.CharField(max_length=500)  # Original file path
     mp4_path = models.CharField(max_length=500)       # Path to the mp4 file
     cover_path = models.CharField(max_length=500)     # Path to the webp cover
+    explain_video_path = models.CharField(max_length=500, blank=True, null=True)  # Path to explanation video
+    explain_cover_path = models.CharField(max_length=500, blank=True, null=True)  # Path to explanation video cover
+    explain_srt_path = models.CharField(max_length=500, blank=True, null=True)  # Path to explanation video subtitles
+    descriptions_path = models.CharField(max_length=500, blank=True, null=True)  # Path to video descriptions
     
     # Store the individual tags
     tag1 = models.CharField(max_length=100, blank=True, null=True)

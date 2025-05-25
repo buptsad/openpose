@@ -1,15 +1,19 @@
 import re
+import shutil
 from pathlib import Path
 from django.core.management.base import BaseCommand
 from video_manager.models import VideoAsset
 from django.conf import settings
+from standard.gif_to_mp4_converter import extract_middle_frame_from_mp4
 
 class Command(BaseCommand):
     help = 'Import videos and covers into the database'
 
     def add_arguments(self, parser):
-        parser.add_argument('--path', type=str, default='static/example_videos',
+        parser.add_argument('--path', type=str, default='standard/example_videos',
                            help='Path to the videos directory')
+        parser.add_argument('--explain-path', type=str, default='standard/explain_videos',
+                           help='Path to the explanation videos directory')
         parser.add_argument('--clear', action='store_true',
                            help='Clear existing database entries')
 
@@ -19,7 +23,14 @@ class Command(BaseCommand):
             VideoAsset.objects.all().delete()
 
         videos_path = Path(settings.BASE_DIR) / options['path']
+        explain_path = Path(settings.BASE_DIR) / options['explain_path']
+        
+        # First import regular videos
         self.import_videos(videos_path)
+        
+        # Then process explain videos
+        self.process_explain_videos(explain_path)
+        
         self.stdout.write(self.style.SUCCESS('Successfully imported videos'))
 
     def extract_file_id_and_tags(self, filename):
@@ -101,9 +112,9 @@ class Command(BaseCommand):
                     # Create tag string (e.g., "tag1_tag1.1_tag1.1.2")
                     tag_string = "_".join([t for t in all_tags if t])
                     
-                    # Create standard paths with Unix format
-                    standard_mp4_path = f"standard/video/tags/{tag_string}"
-                    standard_webp_path = f"standard/cover/tags/{tag_string}"
+                    # Create standard paths with Unix format for client access
+                    standard_mp4_path = f"standard/video/tags/{tag_string}/{combined_id}.mp4"
+                    standard_webp_path = f"standard/cover/tags/{tag_string}/{combined_id}.webp"
                     
                     # Create or update database entry
                     VideoAsset.objects.create(
@@ -126,3 +137,53 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.WARNING(f"No cover found for {mp4_file.name}"))
                     
         self.stdout.write(f"Total videos imported: {count}")
+
+    def process_explain_videos(self, root_path):
+        """Record paths for explanation videos, covers, SRTs, and descriptions in the database."""
+        self.stdout.write(f"Recording explain video paths from: {root_path}")
+        count = 0
+
+        for folder_path in root_path.glob('**'):
+            if not folder_path.is_dir():
+                continue
+
+            folder_name = folder_path.name
+            folder_id, _ = self.extract_folder_id_and_tag(folder_name)
+
+            for explain_file in folder_path.glob('[0-9][0-9].mp4'):
+                file_id = explain_file.stem  # e.g., "01"
+                numeric_id = f"{folder_id}_{file_id}"
+
+                # Find the matching VideoAsset
+                try:
+                    asset = VideoAsset.objects.get(numeric_id=numeric_id)
+                except VideoAsset.DoesNotExist:
+                    self.stdout.write(self.style.WARNING(
+                        f"No VideoAsset found for explain video: {explain_file} (numeric_id={numeric_id})"
+                    ))
+                    continue
+
+                # Paths relative to BASE_DIR, using forward slashes
+                rel_dir = folder_path.relative_to(settings.BASE_DIR)
+                explain_video_path = f"{rel_dir.as_posix()}/{explain_file.name}"
+
+                # Explain cover path (same file id, .webp)
+                explain_cover_file = folder_path / f"{file_id}.webp"
+                explain_cover_path = f"{rel_dir.as_posix()}/{explain_cover_file.name}" if explain_cover_file.exists() else None
+
+                srt_file = explain_file.with_suffix('.srt')
+                explain_srt_path = f"{rel_dir.as_posix()}/{srt_file.name}" if srt_file.exists() else None
+
+                desc_file = folder_path / f"description_{file_id}.txt"
+                descriptions_path = f"{rel_dir.as_posix()}/{desc_file.name}" if desc_file.exists() else None
+
+                asset.explain_video_path = explain_video_path
+                asset.explain_cover_path = explain_cover_path
+                asset.explain_srt_path = explain_srt_path
+                asset.descriptions_path = descriptions_path
+                asset.save()
+
+                self.stdout.write(f"Recorded: {explain_video_path} (cover: {explain_cover_path}, srt: {explain_srt_path}, desc: {descriptions_path})")
+                count += 1
+
+        self.stdout.write(f"Total explain videos processed: {count}")

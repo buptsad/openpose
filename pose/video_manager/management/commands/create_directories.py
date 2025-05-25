@@ -10,6 +10,7 @@ class Command(BaseCommand):
         directories = [
             os.path.join(settings.BASE_DIR, 'standard', 'video'),
             os.path.join(settings.BASE_DIR, 'standard', 'cover'),
+            os.path.join(settings.BASE_DIR, 'standard', 'explain_video'),
         ]
         
         # Create directories
